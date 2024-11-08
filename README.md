@@ -9,20 +9,20 @@ Before getting started, ensure you have the following installed:
 
 ## 🚀 Quick Start Guide
 
-### Step 1: Run Your Local Bot API Server
+1. **Run Your Local Bot API Server**
 Follow the instructions to set up your local server from the [official documentation](https://tdlib.github.io/telegram-bot-api/build.html). If you don't want to build it yourself, you can check tdlib.native.
 
-### Step 2: Obtain API Credentials
+2. **Obtain API Credentials**
 Get your `api-id` and `api-hash` from the [Telegram API](https://core.telegram.org/api/obtaining_api_id).
 
-### Step 3: Start the Server
+3. **Start the Server**
 Run the bot API server using the following command:
 
 ```bash
 telegram-bot-api --api-id YOUR_API_ID --api-hash YOUR_API_HASH --http-port 7575 --local
 ```
 
-### Step 4: Log Out the Bot from the Official API
+4. **Log Out the Bot from the Official API**
 Open this link in your browser:
 
 ```url
@@ -35,7 +35,7 @@ Make sure to replace `<YOUR_TOKEN>` with your actual bot token. You should see a
 {"ok":true,"result":true}
 ```
 
-### Step 5: Interact with Your Bot
+5. **Interact with the Bot**
 Rename `.env-example` to `.env` and add your bot token there (or pass it to the script with `-t <TOKEN>`). Then run the bot:
 
 ```bash
