@@ -12,6 +12,28 @@ import os
 import argparse
 import validators
 import ffmpeg
+import urllib3
+import json
+from time import time
+
+bot_token = None
+
+
+def tg_edit_message(text: str, chat_id: int, message_id: int):
+    # @TODO: find a better way to deal with this
+    urllib3.request(
+        "POST",
+        f"https://api.telegram.org/bot{bot_token}/editMessageText",
+        body=json.dumps(
+            {
+                "chat_id": chat_id,
+                "message_id": message_id,
+                "text": text,
+                "disable_web_page_preview": True,
+            }
+        ),
+        headers={"Content-Type": "application/json"},
+    )
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -31,20 +53,64 @@ def get_video_metadata(filename):
     return None, None, None
 
 
+def create_progress_bar(percentage: float, width: int = 20) -> str:
+    filled = int(width * percentage / 100)
+    bar = "█" * filled + "▒" * (width - filled)
+    return bar
+
+
 async def message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     url = update.effective_message.text
     if not validators.url(url):
         await update.message.reply_text("Please provide a valid URL!")
         return
 
+    update_msg = await update.message.reply_text(
+        f"🎯 Target: {url}\n⏳ Initializing download..."
+    )
+
+    def progress_hook(d: dict):
+        last_update = 0
+        update_interval = 1
+
+        if d["status"] == "downloading" and d.get("total_bytes"):
+            current_time = time()
+            if current_time - last_update >= update_interval:
+                last_update = current_time
+                percentage = round(d["downloaded_bytes"] / d["total_bytes"] * 100)
+                elapsed = round(d["elapsed"]) if d.get("elapsed") else 0
+                eta = round(d["eta"]) if d.get("eta") else 0
+                speed = round(round(d["speed"]) / 1024) if d.get("speed") else 0
+
+                progress_bar = create_progress_bar(percentage)
+                file_size_mb = round(d["total_bytes"] / (1024 * 1024), 2)
+                tg_edit_message(
+                    text=(
+                        f"📥 Downloading: {url}\n"
+                        f"📦 Size: {file_size_mb} MB\n"
+                        f"⏳ Progress: {progress_bar} {percentage}%\n"
+                        f"🚀 Speed: {speed} KB/s\n"
+                        f"⌛ Elapsed: {elapsed}s\n"
+                        f"🎯 ETA: {eta}s"
+                    ),
+                    chat_id=update_msg.chat_id,
+                    message_id=update_msg.id,
+                )
+        elif d["status"] == "finished":
+            tg_edit_message(
+                text="🔄 Processing video...",
+                chat_id=update_msg.chat_id,
+                message_id=update_msg.id,
+            )
+
     ytdlp_opts = {
         "format": "bestvideo+bestaudio/best",
         "outtmpl": "./videos/%(title)s.%(ext)s",
         "merge_output_format": "mp4",
+        "progress_hooks": [progress_hook],
     }
 
     with YoutubeDL(ytdlp_opts) as ytdl:
-        update_msg = await update.message.reply_text(f"Downloading {url}...")
         info_dict = ytdl.extract_info(url, download=True)
         filename = ytdl.prepare_filename(info_dict)
 
@@ -60,12 +126,6 @@ async def message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             .run(capture_stdout=True, capture_stderr=True)
         )
 
-        await context.bot.edit_message_text(
-            text="Uploading...",
-            chat_id=update.message.chat_id,
-            message_id=update_msg.id,
-        )
-
         with open(filename, "rb") as video_file:
             media = InputMediaVideo(
                 media=video_file,
@@ -77,7 +137,11 @@ async def message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             )
             await update.message.reply_media_group(
                 media=[media],
-                caption=f"{video_title}\n\n{url}\nInfo: {video_width}x{video_height}",
+                caption=(
+                    f"🎥 {video_title}\n"
+                    f"🔗 {url}\n"
+                    f"📊 Quality: {video_width}x{video_height}"
+                ),
             )
 
             await context.bot.delete_message(
@@ -90,6 +154,8 @@ async def message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 def main():
+    global bot_token
+
     parser = argparse.ArgumentParser(
         prog="YTdlBot", description="Telegram Video Downloader Bot"
     )
