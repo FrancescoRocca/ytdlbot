@@ -8,7 +8,6 @@ dependencies = [
     "ffmpeg-python>=0.2.0",
     "python-dotenv>=1.0.1",
     "python-telegram-bot>=21.7",
-    "urllib3>=2.3.0",
     "validators>=0.34.0",
     "yt-dlp>=2024.11.4",
 ]
