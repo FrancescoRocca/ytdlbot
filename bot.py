@@ -80,30 +80,27 @@ async def send_video_with_retry(
     if not update.message:
         return False
 
+    video_file_url = f"file://{os.path.abspath(video_path)}"
+    thumb_file_url = (
+        f"file://{os.path.abspath(thumbnail_path)}"
+        if thumbnail_path and os.path.exists(thumbnail_path)
+        else None
+    )
+
     for attempt in range(MAX_RETRIES):
         try:
-            with open(video_path, "rb") as video_file:
-                thumb = (
-                    open(thumbnail_path, "rb")
-                    if thumbnail_path and os.path.exists(thumbnail_path)
-                    else None
-                )
-                try:
-                    await update.message.reply_video(
-                        video=video_file,
-                        width=video_width,
-                        height=video_height,
-                        duration=video_duration,
-                        thumbnail=thumb,
-                        caption=caption,
-                        supports_streaming=True,
-                        read_timeout=READ_TIMEOUT,
-                        write_timeout=WRITE_TIMEOUT,
-                    )
-                    return True
-                finally:
-                    if thumb:
-                        thumb.close()
+            await update.message.reply_video(
+                video=video_file_url,
+                width=video_width,
+                height=video_height,
+                duration=video_duration,
+                thumbnail=thumb_file_url,
+                caption=caption,
+                supports_streaming=True,
+                read_timeout=READ_TIMEOUT,
+                write_timeout=WRITE_TIMEOUT,
+            )
+            return True
         except RetryAfter as e:
             # retry_after can be int or timedelta
             retry_seconds = (
