@@ -152,6 +152,8 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         f"🎯 Target: {url}\n⏳ Initializing download..."
     )
 
+    loop = asyncio.get_running_loop()
+
     progress_state = {
         "last_update": 0,
         "update_interval": PROGRESS_UPDATE_INTERVAL,
@@ -191,29 +193,31 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 )
 
                 try:
-                    asyncio.run_coroutine_threadsafe(
-                        context.bot.edit_message_text(
-                            text=text,
-                            chat_id=update_msg.chat_id,
-                            message_id=update_msg.id,
-                            disable_web_page_preview=True,
-                        ),
-                        context.application.loop,  # type: ignore
-                    )
-                except Exception as e:
-                    logger.debug(f"Failed to update progress: {e}")
-        elif d["status"] == "finished":
-            try:
-                asyncio.run_coroutine_threadsafe(
-                    context.bot.edit_message_text(
-                        text="🔄 Processing video...",
+                    coro = context.bot.edit_message_text(
+                        text=text,
                         chat_id=update_msg.chat_id,
                         message_id=update_msg.id,
-                    ),
-                    context.application.loop,  # type: ignore
+                        disable_web_page_preview=True,
+                    )
+                    try:
+                        asyncio.run_coroutine_threadsafe(coro, loop)
+                    except Exception:
+                        coro.close()
+                except Exception:
+                    return
+        elif d["status"] == "finished":
+            try:
+                coro = context.bot.edit_message_text(
+                    text="🔄 Processing video...",
+                    chat_id=update_msg.chat_id,
+                    message_id=update_msg.id,
                 )
-            except Exception as e:
-                logger.debug(f"Failed to update status: {e}")
+                try:
+                    asyncio.run_coroutine_threadsafe(coro, loop)
+                except Exception:
+                    coro.close()
+            except Exception:
+                return
 
     ytdlp_opts = {
         "format": VIDEO_FORMAT,
