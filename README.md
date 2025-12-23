@@ -1,45 +1,58 @@
-# 📥 YTDLBot - Telegram Video Downloader
+# YTDLBot - Telegram Video Downloader
 
-## 📦 Requirements
-Before getting started, ensure you have the following installed:
+## Requirements
+
+Before proceeding, ensure the following components are installed on your system:
 
 - [uv](https://github.com/astral-sh/uv)
 - [telegram-bot-api](https://github.com/tdlib/telegram-bot-api)
 - [ffmpeg](https://www.ffmpeg.org/download.html)
 
-## 🚀 Quick Start Guide
+## Installation and Configuration Guide
 
-1. **Run Your Local Bot API Server**
-    - Follow the instructions to set up your local server from the [official documentation](https://tdlib.github.io/telegram-bot-api/build.html). If you don't want to build it yourself, you can check tdlib.native.
+### 1. Local Telegram Bot API Server Setup
 
-2. **Obtain API Credentials**
-    - Get your `api-id` and `api-hash` from the [Telegram API](https://core.telegram.org/api/obtaining_api_id).
+To bypass the file size limits imposed by official Telegram servers, a local server configuration is required.
 
-3. **Start the Server**
-    - Run the bot API server using the following command:
-        ```bash
-        telegram-bot-api --api-id YOUR_API_ID --api-hash YOUR_API_HASH --http-port 7575 --local
-        ```
+- Follow the [official documentation](https://tdlib.github.io/telegram-bot-api/build.html) to build the server, or use pre-compiled versions such as tdlib.native.
 
-4. **Log Out the Bot from the Official API**
-    - Open this link in your browser:
-    
-        ```url
-        https://api.telegram.org/bot<YOUR_TOKEN>/logOut
-        ```
+### 2. Telegram API Credentials
 
-    - Make sure to replace `<YOUR_TOKEN>` with your actual bot token. You should see a JSON response that looks like this:
+- Obtain your `api-id` and `api-hash` by registering your application on the [Telegram API](https://core.telegram.org/api/obtaining_api_id) portal.
 
-        ```json
-        {"ok":true,"result":true}
-        ```
+### 3. Starting the API Server
 
-5. **Interact with the Bot**
-    - Rename `.env-example` to `.env` and add your bot token there (or pass it to the script with `-t <TOKEN>`). Then run the bot:
+Run the local server using the following command:
 
-        ```bash
-        uv run bot.py
-        ```
+```bash
+telegram-bot-api --api-id YOUR_API_ID --api-hash YOUR_API_HASH --http-port 7575 --local
+```
 
-## 🤝 Contributing
-We welcome contributions from the community! Feel free to submit issues, fork the project, and create pull requests.
+### 4. Logging Out from the Official Server
+
+Before using the local server, you must log out the bot from the official Telegram servers. Access the following URL via your browser:
+
+```url
+https://api.telegram.org/bot<YOUR_TOKEN>/logOut
+```
+
+Replace `<YOUR_TOKEN>` with the bot token provided by BotFather. A JSON response with `"ok": true` confirms the operation.
+
+### 5. Environment Configuration
+
+1. Rename the `.env-example` file to `.env`.
+2. Enter your bot token in the `.env` file or pass it as an argument during startup.
+
+## Usage
+
+To start the bot, use the following command:
+
+```bash
+uv run bot.py
+```
+
+The bot will process valid URLs sent in the chat, download the content, and send the video file.
+
+## Contributing
+
+Contributions to the project are welcome. You can report bugs via issues or propose improvements through pull requests.
