@@ -102,7 +102,6 @@ async def send_video_with_retry(
             )
             return True
         except RetryAfter as e:
-            # retry_after can be int or timedelta
             retry_seconds = (
                 e.retry_after
                 if isinstance(e.retry_after, int)
@@ -163,9 +162,9 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     def progress_hook(d: dict):
         if d["status"] == "downloading" and d.get("total_bytes"):
             current_time = time()
-            total = d["total_bytes"]
-            downloaded = d["downloaded_bytes"]
-            percentage = round(downloaded / total * 100)
+            total = d.get("total_bytes") or 0
+            downloaded = d.get("downloaded_bytes") or 0
+            percentage = round(downloaded * 100 / total) if total else 0
 
             if (
                 current_time - progress_state["last_update"]
@@ -176,12 +175,22 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 progress_state["last_update"] = current_time
                 progress_state["last_percentage"] = percentage
 
-                elapsed = round(d.get("elapsed", 0))
-                eta = round(d.get("eta", 0))
-                speed = round(d.get("speed", 0) / 1024) if d.get("speed") else 0
+                elapsed_raw = d.get("elapsed")
+                eta_raw = d.get("eta")
+                speed_raw = d.get("speed")
+
+                elapsed = (
+                    round(elapsed_raw) if isinstance(elapsed_raw, (int, float)) else 0
+                )
+                eta = round(eta_raw) if isinstance(eta_raw, (int, float)) else 0
+                speed = (
+                    round(speed_raw / 1024)
+                    if isinstance(speed_raw, (int, float)) and speed_raw is not None
+                    else 0
+                )
 
                 progress_bar = create_progress_bar(percentage)
-                file_size_mb = round(total / (1024 * 1024), 2)
+                file_size_mb = round(total / (1024 * 1024), 2) if total else 0
 
                 text = (
                     f"📥 Downloading: {url}\n"
