@@ -1,0 +1,26 @@
+services:
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
+    container_name: telegram-bot-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - telegram-api-data:/var/lib/telegram-bot-api
+      - ./videos:/app/videos
+    ports:
+      - "8081:8081"
+
+  bot:
+    build: .
+    container_name: ytdlbot
+    restart: unless-stopped
+    depends_on:
+      - telegram-bot-api
+    env_file:
+      - .env
+    volumes:
+      - ./videos:/app/videos
+
+volumes:
+  telegram-api-data:
